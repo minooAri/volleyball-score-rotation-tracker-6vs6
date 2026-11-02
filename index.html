@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#10233f">
+<title>6v6 Volleyball Tracker</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#17243a;background:#eef3f8}
+*{box-sizing:border-box}body{margin:0;padding:18px 12px 36px}main{max-width:680px;margin:auto}
+.app{background:#fff;border:1px solid #dce5ef;border-radius:22px;padding:21px;box-shadow:0 12px 35px #18385b12}
+h1{text-align:center;font-size:1.55rem;margin:0 0 5px} .sub{text-align:center;color:#617087;margin:0 0 20px;font-size:.9rem}
+h2{font-size:1rem;margin:20px 0 10px}.muted{font-size:.8rem;color:#68788d;line-height:1.5}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:12px 13px;font-weight:750}
+button:disabled{opacity:.42;cursor:not-allowed}
+.server-options,.scores,.timer-buttons,.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.server{background:#edf2f8;color:#31435b;border:2px solid transparent}.server.active{border-color:#2367bd;background:#e8f1ff;color:#1555a5}
+.team{color:#fff;padding:15px;border-radius:16px;text-align:center}.team.a{background:#1769aa}.team.b{background:#27834b}
+.team-name{font-weight:800;letter-spacing:.04em}.score{font-size:3rem;line-height:1.2;font-weight:850;margin:7px 0 12px;font-variant-numeric:tabular-nums}.point{background:#fff;color:#17243a;width:100%}
+.panel{background:#f0f5fb;border-radius:16px;padding:17px;text-align:center}.eyebrow{font-size:.72rem;font-weight:850;letter-spacing:.12em;color:#64758b}
+.next-team{font-size:1.5rem;font-weight:900;margin:7px 0 0}.next-action{font-size:1.2rem;font-weight:850;margin:2px 0}.steps{display:grid;gap:7px}
+.step{display:flex;align-items:center;gap:11px;background:#f7f9fc;border:1px solid #e5ebf2;border-radius:11px;padding:10px 11px}.step.current{border:2px solid #23945c;background:#effaf4;padding:9px 10px}
+.step .num{color:#718096;width:17px}.step .who{flex:1;font-weight:750}.action{font-size:.82rem;font-weight:850}.tag{font-size:.68rem;background:#d8f3e3;color:#17683b;border-radius:20px;padding:4px 8px;font-weight:850}
+.timer{background:#10233f;color:#fff;border-radius:16px;padding:17px;text-align:center}.clock{font-size:2.5rem;font-weight:850;letter-spacing:.04em;font-variant-numeric:tabular-nums;margin:4px 0 12px}
+.timer-buttons button{background:#fff;color:#17243a}.timer-buttons .secondary{background:#dce7f5}
+.undo{background:#fff1d9;color:#805000}.reset{background:#fff0f0;color:#a32626}.history{max-height:260px;overflow:auto;border-top:1px solid #e5ebf2;margin-top:8px}
+.history-row{display:grid;grid-template-columns:1fr auto;gap:8px;padding:9px 2px;border-bottom:1px solid #edf1f5;font-size:.86rem}
+.total{display:flex;justify-content:space-between;align-items:center;padding:13px 2px 3px;font-weight:800}
+.toast{min-height:20px;text-align:center;color:#17683b;font-size:.83rem;margin-top:8px}
+@media(max-width:390px){body{padding:10px 7px}.app{padding:15px}.score{font-size:2.5rem}.clock{font-size:2.1rem}}
+</style>
+</head>
+<body>
+<main><section class="app">
+<h1>🏐 6v6 Volleyball Tracker</h1>
+<p class="sub">Score · Custom service/toss rotation · Match timer · Undo</p>
+
+<h2>1. Choose the first serving team</h2>
+<div class="server-options">
+<button class="server active" id="startA" type="button">Team A serves first</button>
+<button class="server" id="startB" type="button">Team B serves first</button>
+</div>
+<p class="muted">Changing the starting server resets the match and its point history.</p>
+
+<h2>2. Score — tap the team that wins each point</h2>
+<div class="scores">
+<div class="team a"><div class="team-name">TEAM A</div><div class="score" id="scoreA">0</div><button class="point" id="pointA">+ Point A</button></div>
+<div class="team b"><div class="team-name">TEAM B</div><div class="score" id="scoreB">0</div><button class="point" id="pointB">+ Point B</button></div>
+</div>
+
+<h2>3. Next action</h2>
+<div class="panel" aria-live="polite">
+<div class="eyebrow">UP NEXT</div><div class="next-team" id="nextTeam">TEAM A</div>
+<div class="next-action" id="nextAction">SERVICE</div>
+<div class="eyebrow" id="actionNumber">ACTION #1 · BEFORE POINT 1</div>
+</div>
+
+<h2>4. Rotation pattern</h2>
+<div class="steps" id="steps"></div>
+<p class="muted">Pattern repeats after the sixth action: starting team serves, then the other team tosses, starter tosses, other team serves, starter tosses, other team tosses.</p>
+
+<h2>5. Match timer</h2>
+<div class="timer">
+<div class="eyebrow" style="color:#c5d3e6">ELAPSED MATCH TIME</div>
+<div class="clock" id="clock">00:00:00</div>
+<div class="timer-buttons">
+<button id="timerToggle">▶ Start timer</button>
+<button class="secondary" id="timerReset">↺ Reset timer</button>
+</div>
+<p class="muted" style="color:#c5d3e6;margin-bottom:0">Point entries record the elapsed match time and the clock time.</p>
+</div>
+
+<h2>6. Corrections & match controls</h2>
+<div class="controls">
+<button class="undo" id="undo" disabled>↶ Reverse last point</button>
+<button class="reset" id="reset">Reset match</button>
+</div>
+<div class="toast" id="message" role="status"></div>
+<div class="total"><span>Total points</span><span id="total">0</span></div>
+
+<h2>7. Point & time record</h2>
+<div class="history" id="history"><p class="muted">No points recorded yet.</p></div>
+<p class="muted">Match score, starting team, point history and timer state are saved in this browser on this device. Keep using the same browser to continue. Clearing browser data may erase the saved match.</p>
+</section></main>
+<script>
+(()=>{
+ const KEY='volleyballTracker6v6_v2';
+ const $=id=>document.getElementById(id);
+ let state={first:'A',points:[],elapsedMs:0,running:false,startedAt:null};
+ let ticker=null;
+ function load(){
+  try{
+   const s=JSON.parse(localStorage.getItem(KEY));
+   if(s&&['A','B'].includes(s.first)&&Array.isArray(s.points)&&s.points.every(p=>p&&['A','B'].includes(p.team))){
+    state={first:s.first,points:s.points,elapsedMs:Number(s.elapsedMs)||0,running:!!s.running,startedAt:Number(s.startedAt)||null};
+    if(state.running&&state.startedAt)state.elapsedMs+=Math.max(0,Date.now()-state.startedAt);
+    state.running=false;state.startedAt=null;
+   }
+  }catch(e){}
+ }
+ function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+ function elapsed(){return state.elapsedMs+(state.running&&state.startedAt?Math.max(0,Date.now()-state.startedAt):0)}
+ function fmt(ms){let sec=Math.floor(ms/1000),h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;return [h,m,s].map(n=>String(n).padStart(2,'0')).join(':')}
+ function sequence(){const starter=state.first,other=starter==='A'?'B':'A';return [
+  {team:starter,action:'SERVICE'},
+  {team:other,action:'TOSS'},
+  {team:starter,action:'TOSS'},
+  {team:other,action:'SERVICE'},
+  {team:starter,action:'TOSS'},
+  {team:other,action:'TOSS'}
+ ]}
+ function render(){
+  const a=state.points.filter(p=>p.team==='A').length,b=state.points.filter(p=>p.team==='B').length;
+  $('scoreA').textContent=a;$('scoreB').textContent=b;$('total').textContent=state.points.length;
+  $('startA').classList.toggle('active',state.first==='A');$('startB').classList.toggle('active',state.first==='B');
+  const seq=sequence(),idx=state.points.length%seq.length,cur=seq[idx];
+  $('nextTeam').textContent='TEAM '+cur.team;$('nextTeam').style.color=cur.team==='A'?'#1769aa':'#27834b';
+  $('nextAction').textContent=cur.action;$('actionNumber').textContent='ACTION #'+(state.points.length+1)+' · BEFORE POINT '+(state.points.length+1);
+  $('steps').innerHTML=seq.map((s,i)=>`<div class="step ${i===idx?'current':''}"><span class="num">${i+1}.</span><span class="who">Team ${s.team}</span><span class="action">${s.action}</span>${i===idx?'<span class="tag">NEXT</span>':''}</div>`).join('');
+  $('undo').disabled=!state.points.length;
+  $('history').innerHTML=state.points.length?state.points.map((p,i)=>`<div class="history-row"><span><strong>Point ${i+1} · Team ${p.team}</strong><br><span class="muted">${p.clockLabel}</span></span><strong>${p.elapsedLabel}</strong></div>`).reverse().join(''):'<p class="muted">No points recorded yet.</p>';
+  $('clock').textContent=fmt(elapsed());$('timerToggle').textContent=state.running?'Ⅱ Pause timer':'▶ Start timer';
+ }
+ function add(team){
+  const now=Date.now(),ms=elapsed(),d=new Date(now);
+  state.points.push({team,elapsedMs:ms,elapsedLabel:fmt(ms),clockLabel:d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})});
+  save();render();$('message').textContent='Point recorded for Team '+team+' at '+fmt(ms)+'.';
+ }
+ function undo(){if(!state.points.length)return;const p=state.points.pop();save();render();$('message').textContent='Last point for Team '+p.team+' reversed. Score, rotation and point record restored.';}
+ function toggleTimer(){
+  if(state.running){state.elapsedMs=elapsed();state.running=false;state.startedAt=null;$('message').textContent='Timer paused.';}
+  else{state.running=true;state.startedAt=Date.now();$('message').textContent='Timer started.';}
+  save();render();
+ }
+ function resetTimer(){state.elapsedMs=0;state.startedAt=state.running?Date.now():null;save();render();$('message').textContent='Timer reset to 00:00:00.';}
+ function resetMatch(){
+  if(!confirm('Reset the match, scores, point history and timer?'))return;
+  state={first:state.first,points:[],elapsedMs:0,running:false,startedAt:null};save();render();$('message').textContent='Match and timer reset.';
+ }
+ function choose(first){
+  if(first===state.first)return;
+  if((state.points.length||elapsed()>0)&&!confirm('Changing the starting server will clear the current match, point history and timer. Continue?'))return;
+  state={first,points:[],elapsedMs:0,running:false,startedAt:null};save();render();$('message').textContent='Team '+first+' will serve first.';
+ }
+ $('pointA').addEventListener('click',()=>add('A'));$('pointB').addEventListener('click',()=>add('B'));
+ $('undo').addEventListener('click',undo);$('reset').addEventListener('click',resetMatch);
+ $('startA').addEventListener('click',()=>choose('A'));$('startB').addEventListener('click',()=>choose('B'));
+ $('timerToggle').addEventListener('click',toggleTimer);$('timerReset').addEventListener('click',resetTimer);
+ load();render();ticker=setInterval(()=>{$('clock').textContent=fmt(elapsed());},250);
+})();
+</script>
+</body></html>
