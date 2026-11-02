@@ -28,6 +28,13 @@ button:disabled{opacity:.42;cursor:not-allowed}
 .undo{background:#fff1d9;color:#805000}.reset{background:#fff0f0;color:#a32626}.history{max-height:260px;overflow:auto;border-top:1px solid #e5ebf2;margin-top:8px}
 .history-row{display:grid;grid-template-columns:1fr auto;gap:8px;padding:9px 2px;border-bottom:1px solid #edf1f5;font-size:.86rem}
 .total{display:flex;justify-content:space-between;align-items:center;padding:13px 2px 3px;font-weight:800}
+.timeout-panel{background:#fff8e8;border:1px solid #f0dfb8;border-radius:16px;padding:15px}
+.team-timeout{display:block;width:100%;margin:2px 0 8px;padding:7px 6px;border-radius:9px;background:#fff;color:#174b78;font-size:.72rem;font-weight:800}
+.team.b .team-timeout{color:#17683b}
+.team-timeout:disabled{opacity:.7;background:#e8edf2;color:#68788d}
+.timeout-log{max-height:220px;overflow:auto;margin-top:10px}
+.timeout-row{padding:9px 2px;border-bottom:1px solid #f0e5cf;font-size:.84rem}
+.timeout-count{font-size:.78rem;font-weight:700;color:#805000;margin-top:6px}
 .toast{min-height:20px;text-align:center;color:#17683b;font-size:.83rem;margin-top:8px}
 @media(max-width:390px){body{padding:10px 7px}.app{padding:15px}.score{font-size:2.5rem}.clock{font-size:2.1rem}}
 </style>
@@ -64,8 +71,13 @@ button:disabled{opacity:.42;cursor:not-allowed}
 <div class="total"><span>Total points</span><span id="total">0</span></div>
 <h2>4. Score — tap the team that wins each point</h2>
 <div class="scores">
-<div class="team a"><div class="team-name">TEAM A</div><div class="score" id="scoreA">0</div><button class="point" id="pointA">+ Point A</button></div>
-<div class="team b"><div class="team-name">TEAM B</div><div class="score" id="scoreB">0</div><button class="point" id="pointB">+ Point B</button></div>
+<div class="team a"><div class="team-name">TEAM A</div><button class="team-timeout" id="timeoutA" type="button">⏱ Time out 1/2 · Team A</button><div class="score" id="scoreA">0</div><button class="point" id="pointA">+ Point A</button></div>
+<div class="team b"><div class="team-name">TEAM B</div><button class="team-timeout" id="timeoutB" type="button">⏱ Time out 1/2 · Team B</button><div class="score" id="scoreB">0</div><button class="point" id="pointB">+ Point B</button></div>
+</div>
+<h2>5. Timeout record</h2>
+<div class="timeout-panel">
+ <p class="muted" style="margin-top:0">Each team may request up to 2 timeouts per match. Each request records the score and time.</p>
+ <div class="timeout-log" id="timeoutHistory"><p class="muted">No timeouts requested yet.</p></div>
 </div>
 
 <h2>5. Next action</h2>
@@ -88,13 +100,13 @@ button:disabled{opacity:.42;cursor:not-allowed}
 (()=>{
  const KEY='volleyballTracker6v6_v2';
  const $=id=>document.getElementById(id);
- let state={first:'A',points:[],elapsedMs:0,running:false,startedAt:null};
+ let state={first:'A',points:[],timeouts:[],elapsedMs:0,running:false,startedAt:null};
  let ticker=null;
  function load(){
   try{
    const s=JSON.parse(localStorage.getItem(KEY));
    if(s&&['A','B'].includes(s.first)&&Array.isArray(s.points)&&s.points.every(p=>p&&['A','B'].includes(p.team))){
-    state={first:s.first,points:s.points,elapsedMs:Number(s.elapsedMs)||0,running:!!s.running,startedAt:Number(s.startedAt)||null};
+    state={first:s.first,points:s.points,timeouts:Array.isArray(s.timeouts)?s.timeouts.filter(t=>t&&['A','B'].includes(t.team)).slice(0,4):[],elapsedMs:Number(s.elapsedMs)||0,running:!!s.running,startedAt:Number(s.startedAt)||null};
     if(state.running&&state.startedAt)state.elapsedMs+=Math.max(0,Date.now()-state.startedAt);
     state.running=false;state.startedAt=null;
    }
@@ -121,12 +133,28 @@ button:disabled{opacity:.42;cursor:not-allowed}
   $('steps').innerHTML=seq.map((s,i)=>`<div class="step ${i===idx?'current':''}"><span class="num">${i+1}.</span><span class="who">Team ${s.team}</span><span class="action">${s.action}</span>${i===idx?'<span class="tag">NEXT</span>':''}</div>`).join('');
   $('undo').disabled=!state.points.length;
   $('history').innerHTML=state.points.length?state.points.map((p,i)=>`<div class="history-row"><span><strong>Point ${i+1} · Team ${p.team}</strong><br><span class="muted">${p.clockLabel}</span></span><strong>${p.elapsedLabel}</strong></div>`).reverse().join(''):'<p class="muted">No points recorded yet.</p>';
+  const usedA=state.timeouts.filter(t=>t.team==='A').length,usedB=state.timeouts.filter(t=>t.team==='B').length;
+  $('timeoutA').textContent=usedA>=2?'✓ Time outs used 2/2 · Team A':'⏱ Time out '+(usedA+1)+'/2 · Team A';
+  $('timeoutB').textContent=usedB>=2?'✓ Time outs used 2/2 · Team B':'⏱ Time out '+(usedB+1)+'/2 · Team B';
+  $('timeoutA').disabled=usedA>=2;$('timeoutB').disabled=usedB>=2;
+  $('timeoutHistory').innerHTML=state.timeouts.length?state.timeouts.map((t,i)=>{const teamRequestNo=state.timeouts.slice(0,i+1).filter(x=>x.team===t.team).length;return `<div class="timeout-row"><strong>Time out ${teamRequestNo}/2 · Team ${t.team}</strong><br>Score at request: <strong>Team A: ${t.scoreA} · Team B: ${t.scoreB}</strong><br><span class="muted">Clock: ${t.clockLabel} · Match time: ${t.elapsedLabel}</span></div>`;}).reverse().join(''):'<p class="muted">No timeouts requested yet.</p>';
   $('clock').textContent=fmt(elapsed());$('timerToggle').textContent=state.running?'Ⅱ Pause timer':'▶ Start timer';
  }
  function add(team){
   const now=Date.now(),ms=elapsed(),d=new Date(now);
   state.points.push({team,elapsedMs:ms,elapsedLabel:fmt(ms),clockLabel:d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})});
   save();render();$('message').textContent='Point recorded for Team '+team+' at '+fmt(ms)+'.';
+ }
+ function requestTimeout(team){
+  const used=state.timeouts.filter(t=>t.team===team).length;
+  if(used>=2){$('message').textContent='Team '+team+' has used both timeouts.';return;}
+  const now=Date.now(),ms=elapsed(),d=new Date(now);
+  const scoreA=state.points.filter(p=>p.team==='A').length;
+  const scoreB=state.points.filter(p=>p.team==='B').length;
+  const clockLabel=d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  state.timeouts.push({team,scoreA,scoreB,elapsedMs:ms,elapsedLabel:fmt(ms),clockLabel});
+  save();render();
+  $('message').textContent='Team '+team+' timeout recorded at Team A: '+scoreA+' · Team B: '+scoreB+' ('+clockLabel+').';
  }
  function undo(){if(!state.points.length)return;const p=state.points.pop();save();render();$('message').textContent='Last point for Team '+p.team+' reversed. Score, rotation and point record restored.';}
  function toggleTimer(){
@@ -137,14 +165,15 @@ button:disabled{opacity:.42;cursor:not-allowed}
  function resetTimer(){state.elapsedMs=0;state.startedAt=state.running?Date.now():null;save();render();$('message').textContent='Timer reset to 00:00:00.';}
  function resetMatch(){
   if(!confirm('Reset the match, scores, point history and timer?'))return;
-  state={first:state.first,points:[],elapsedMs:0,running:false,startedAt:null};save();render();$('message').textContent='Match and timer reset.';
+  state={first:state.first,points:[],timeouts:[],elapsedMs:0,running:false,startedAt:null};save();render();$('message').textContent='Match and timer reset.';
  }
  function choose(first){
   if(first===state.first)return;
   if((state.points.length||elapsed()>0)&&!confirm('Changing the starting server will clear the current match, point history and timer. Continue?'))return;
-  state={first,points:[],elapsedMs:0,running:false,startedAt:null};save();render();$('message').textContent='Team '+first+' will serve first.';
+  state={first,points:[],timeouts:[],elapsedMs:0,running:false,startedAt:null};save();render();$('message').textContent='Team '+first+' will serve first.';
  }
  $('pointA').addEventListener('click',()=>add('A'));$('pointB').addEventListener('click',()=>add('B'));
+ $('timeoutA').addEventListener('click',()=>requestTimeout('A'));$('timeoutB').addEventListener('click',()=>requestTimeout('B'));
  $('undo').addEventListener('click',undo);$('reset').addEventListener('click',resetMatch);
  $('startA').addEventListener('click',()=>choose('A'));$('startB').addEventListener('click',()=>choose('B'));
  $('timerToggle').addEventListener('click',toggleTimer);$('timerReset').addEventListener('click',resetTimer);
