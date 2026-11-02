@@ -42,24 +42,7 @@ button:disabled{opacity:.42;cursor:not-allowed}
 </div>
 <p class="muted">Changing the starting server resets the match and its point history.</p>
 
-<h2>2. Score — tap the team that wins each point</h2>
-<div class="scores">
-<div class="team a"><div class="team-name">TEAM A</div><div class="score" id="scoreA">0</div><button class="point" id="pointA">+ Point A</button></div>
-<div class="team b"><div class="team-name">TEAM B</div><div class="score" id="scoreB">0</div><button class="point" id="pointB">+ Point B</button></div>
-</div>
-
-<h2>3. Next action</h2>
-<div class="panel" aria-live="polite">
-<div class="eyebrow">UP NEXT</div><div class="next-team" id="nextTeam">TEAM A</div>
-<div class="next-action" id="nextAction">SERVICE</div>
-<div class="eyebrow" id="actionNumber">ACTION #1 · BEFORE POINT 1</div>
-</div>
-
-<h2>4. Rotation pattern</h2>
-<div class="steps" id="steps"></div>
-<p class="muted">Pattern repeats after the sixth action: starting team serves, then the other team tosses, starter tosses, other team serves, starter tosses, other team tosses.</p>
-
-<h2>5. Match timer</h2>
+ <h2>2. Match timer</h2>
 <div class="timer">
 <div class="eyebrow" style="color:#c5d3e6">ELAPSED MATCH TIME</div>
 <div class="clock" id="clock">00:00:00</div>
@@ -70,13 +53,30 @@ button:disabled{opacity:.42;cursor:not-allowed}
 <p class="muted" style="color:#c5d3e6;margin-bottom:0">Point entries record the elapsed match time and the clock time.</p>
 </div>
 
-<h2>6. Corrections & match controls</h2>
+<h2>3. Corrections & match controls</h2>
 <div class="controls">
 <button class="undo" id="undo" disabled>↶ Reverse last point</button>
 <button class="reset" id="reset">Reset match</button>
 </div>
 <div class="toast" id="message" role="status"></div>
 <div class="total"><span>Total points</span><span id="total">0</span></div>
+<h2>4. Score — tap the team that wins each point</h2>
+<div class="scores">
+<div class="team a"><div class="team-name">TEAM A</div><div class="score" id="scoreA">0</div><button class="point" id="pointA">+ Point A</button></div>
+<div class="team b"><div class="team-name">TEAM B</div><div class="score" id="scoreB">0</div><button class="point" id="pointB">+ Point B</button></div>
+</div>
+
+<h2>5. Next action</h2>
+<div class="panel" aria-live="polite">
+<div class="eyebrow">UP NEXT</div><div class="next-team" id="nextTeam">TEAM A</div>
+<div class="next-action" id="nextAction">SERVICE</div>
+<div class="eyebrow" id="actionNumber">ACTION #1 · BEFORE POINT 1</div>
+</div>
+
+<h2>5. Rotation pattern</h2>
+<div class="steps" id="steps"></div>
+<p class="muted">Pattern repeats after the sixth action: starting team serves, then the other team tosses, starter tosses, other team serves, starter tosses, other team tosses.</p>
+
 
 <h2>7. Point & time record</h2>
 <div class="history" id="history"><p class="muted">No points recorded yet.</p></div>
