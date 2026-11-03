@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#10233f">
+<meta name="theme-color" content="#edf3f9">
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./icons/icon-192.png">
 <title>6v6 Volleyball Tracker</title>
@@ -63,23 +63,221 @@ button{padding:10px 11px;border-radius:10px}
 .team-timeout{margin:2px 0 7px;padding:6px 5px}
 .timeout-log{margin-top:8px}
 .timeout-row{padding:8px 2px}
+.rosters{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.roster-team{background:#f4f7fb;border:1px solid #e1e8f0;border-radius:12px;padding:9px;min-width:0}
+.roster-title{font-weight:850;font-size:.82rem;margin:0 0 7px}
+.roster-head,.roster-player{display:grid;grid-template-columns:43px minmax(0,1fr) 61px;gap:5px;align-items:center}
+.roster-head{font-size:.62rem;color:#718096;font-weight:800;padding:0 2px 4px}
+.roster-player{padding:4px 3px;border-radius:7px}
+.roster-player.serving{background:#e1f5e9;outline:1px solid #9bd5b1}
+.roster-player input{width:100%;min-width:0;border:1px solid #d5deea;border-radius:6px;padding:6px 4px;font:inherit;font-size:.72rem;background:#fff;color:#17243a}
+.roster-player input.number{ text-align:center }
+.server-mark{font-size:.56rem;color:#17683b;font-weight:900;grid-column:1 / -1;margin:-2px 0 1px 4px;min-height:0}
+.server-mark:empty{display:none}
+.next-server{font-size:.76rem;font-weight:750;margin-top:7px;color:#42546b}
+.server-turns{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px;text-align:left}
+.server-turn{background:#fff;border:1px solid #dce5ef;border-radius:9px;padding:8px;font-size:.72rem;color:#31435b}
+.server-turn.active{border:2px solid #23945c;background:#effaf4;padding:7px}
+.server-turn strong{display:block;font-size:.76rem;margin-bottom:3px}
+.server-when{display:block;margin-top:3px;color:#68788d;font-size:.67rem}
+@media(max-width:390px){.server-turns{grid-template-columns:1fr}}
+@media(max-width:430px){.rosters{grid-template-columns:1fr}.roster-head,.roster-player{grid-template-columns:48px minmax(0,1fr) 66px}} 
 .toast{margin-top:7px}
+.team-name-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.team-name-field{display:flex;flex-direction:column;gap:4px;font-size:.72rem;font-weight:800;color:#52647a}
+.team-name-field input{width:100%;min-width:0;border:1px solid #d5deea;border-radius:9px;padding:8px 9px;font:inherit;font-size:.85rem;color:#17243a;background:#fff}
 @media(max-width:390px){body{padding:9px 6px}.app{padding:13px}.score{font-size:2.3rem}.clock{font-size:1.95rem}}
+
+/* Ultra-compact timer: keep scoring and rosters visually dominant */
+.timer{padding:6px 9px;border-radius:10px}
+.timer .eyebrow{font-size:.62rem;letter-spacing:.10em}
+.clock{font-size:1.45rem;line-height:1.1;margin:1px 0 5px;letter-spacing:.02em}
+.timer-buttons{gap:7px}
+.timer-buttons button{padding:5px 7px;border-radius:7px;font-size:.76rem}
+.timer p.muted{font-size:.62rem;line-height:1.2;margin-top:4px}
+@media(max-width:390px){.timer{padding:5px 8px}.clock{font-size:1.35rem;margin:1px 0 4px}.timer-buttons button{padding:5px 6px;font-size:.72rem}}
+
+
+/* PREMIUM NAVY REDESIGN — visual-only overrides */
+:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#e8eef8;background:#071426}
+body{background:radial-gradient(ellipse at 50% -15%,#1c3a60 0%,#0b1d34 43%,#071426 100%);color:#e8eef8;padding:22px 13px 40px}
+main{max-width:760px}
+.app{background:linear-gradient(155deg,#122640 0%,#0d1d32 58%,#0a192b 100%);border:1px solid #29415e;border-radius:24px;padding:22px;box-shadow:0 24px 70px #0008, inset 0 1px 0 #ffffff0b}
+h1{color:#f5f8ff;font-size:1.62rem;letter-spacing:-.035em;margin-bottom:7px}
+.sub{color:#9db0c8;margin-bottom:20px}
+h2{color:#e8f0fb;font-size:.96rem;letter-spacing:.005em;margin:22px 0 10px;display:flex;align-items:center;gap:8px}
+h2:before{content:"";width:3px;height:15px;border-radius:3px;background:#58a6ff;display:inline-block}
+.muted{color:#91a5bf}
+button{border-radius:11px;transition:transform .14s ease,filter .14s ease,background .14s ease;box-shadow:0 3px 9px #0002}
+button:not(:disabled):active{transform:translateY(1px) scale(.99)}
+.server{background:#1a2e48;color:#c5d3e5;border:1px solid #304965}
+.server.active{border:1px solid #68adff;background:linear-gradient(135deg,#1c5a96,#174477);color:#fff;box-shadow:0 0 0 2px #5ba5f533,0 5px 15px #0003}
+.team{border:1px solid #ffffff20;box-shadow:0 12px 25px #0003;padding:14px}
+.team.a{background:linear-gradient(145deg,#176db1,#104779)}
+.team.b{background:linear-gradient(145deg,#238653,#155b3a)}
+.team-name{font-size:.9rem;letter-spacing:.07em;text-transform:uppercase;color:#fff}
+.score{font-size:3rem;letter-spacing:-.055em;text-shadow:0 3px 12px #0003}
+.point{background:#f4f8ff;color:#11243b;box-shadow:0 3px 10px #00172b55}
+.point:hover:not(:disabled){background:#dcecff}
+.panel{background:linear-gradient(145deg,#172f4c,#122640);border:1px solid #34516f;color:#f1f6ff;box-shadow:inset 0 1px 0 #ffffff08}
+.eyebrow{color:#9bb0ca}
+.next-team{color:#72b8ff!important}
+.step{background:#132943;border:1px solid #29425f;color:#dce7f5}
+.step.current{background:#123d36;border:1px solid #35b77b;box-shadow:0 0 0 2px #35b77b20}
+.step .num{color:#8fa5c0}
+.tag{background:#b8f0d1;color:#075b36}
+.timer{background:linear-gradient(135deg,#09182a,#142d49);border:1px solid #294563;box-shadow:inset 0 1px 0 #ffffff0b}
+.timer-buttons button{background:#eaf2fc;color:#10233f}
+.timer-buttons .secondary{background:#c9d8eb;color:#18324f}
+.undo{background:#5a421b;color:#ffe0a1;border:1px solid #84642a}
+.reset{background:#542b35;color:#ffd9df;border:1px solid #7d414d}
+.total{color:#dce8f7;border-bottom:1px solid #263d59}
+.history{border-top:1px solid #2b425e}
+.history-row{border-bottom:1px solid #263b55;color:#e2ebf7}
+.timeout-panel{background:linear-gradient(145deg,#302a20,#242538);border:1px solid #62543a;color:#f2eadb}
+.timeout-panel .muted{color:#c3b89f}
+.team-timeout{background:#f0f6ff;color:#174b78}
+.team.b .team-timeout{color:#17683b}
+.timeout-row{border-bottom:1px solid #51452f;color:#f4ead7}
+.timeout-count{color:#f1cb80}
+.roster-team{background:#10243c;border:1px solid #2b4562;box-shadow:inset 0 1px 0 #ffffff08}
+.roster-title{color:#dceaff!important;letter-spacing:.045em}
+.roster-head{color:#8fa5c0}
+.roster-player{color:#dce7f5}
+.roster-player input,.team-name-field input{background:#091a2d;border:1px solid #35516f;color:#edf5ff;outline:none}
+.roster-player input:focus,.team-name-field input:focus{border-color:#69b2ff;box-shadow:0 0 0 3px #4a9fff25}
+.roster-player input::placeholder,.team-name-field input::placeholder{color:#7188a4}
+.roster-player.serving{background:#123d36;outline:1px solid #39b77b}
+.server-mark{color:#7ce0ac}
+.next-server{color:#b2c4da}
+.server-turn{background:#10243c;border:1px solid #2d4764;color:#dce8f7}
+.server-turn.active{background:#123d36;border:1px solid #35b77b}
+.server-when{color:#9db0c8}
+.team-name-field{color:#a9bdd5}
+.toast{color:#83e0ae}
+@media(max-width:430px){body{padding:12px 7px 28px}.app{padding:15px;border-radius:18px}h1{font-size:1.42rem}}
+@media(prefers-reduced-motion:reduce){button{transition:none}}
+
+
+
+/* LIGHT PREMIUM THEME — softer background for comfortable viewing */
+:root{color-scheme:light;color:#203047;background:#edf3f9}
+body{background:linear-gradient(180deg,#f4f7fb 0%,#eaf0f7 100%);color:#203047}
+.app{background:#ffffff;border:1px solid #dbe5ef;box-shadow:0 12px 34px #243b530f}
+h1{color:#183451}
+.sub{color:#64758a}
+h2{color:#233d59}
+h2:before{background:#4389ca}
+.muted{color:#66788d}
+.server{background:#edf3f9;color:#314b67;border:1px solid #d8e2ed}
+.server.active{border:1px solid #3984c8;background:#e4f1ff;color:#15558f;box-shadow:0 0 0 2px #3984c822,0 3px 9px #244b7010}
+.team{box-shadow:0 5px 14px #17324a18;border:1px solid #ffffff55}
+.panel{background:#f0f6fc;border:1px solid #d9e6f2;color:#203047;box-shadow:none}
+.eyebrow{color:#657b92}
+.next-team{color:#1769aa!important}
+.step{background:#f7f9fc;border:1px solid #e1e8f0;color:#273b52}
+.step.current{background:#eaf8f0;border:1px solid #45a878;box-shadow:0 0 0 2px #45a87818}
+.step .num{color:#77889a}
+.timer{background:#eaf2fa;border:1px solid #d4e2ef;color:#203047;box-shadow:none}
+.timer .eyebrow{color:#647a91!important}
+.timer p.muted{color:#647a91!important}
+.timer-buttons button{background:#ffffff;color:#203a56;border:1px solid #d8e3ee;box-shadow:0 2px 5px #17324a0d}
+.timer-buttons .secondary{background:#dce8f4;color:#29445f}
+.undo{background:#fff4df;color:#805000;border:1px solid #f0d9a8}
+.reset{background:#fff0f0;color:#a32626;border:1px solid #f0cece}
+.total{color:#263d56;border-bottom:1px solid #e2e9f0}
+.history{border-top:1px solid #e2e9f0}
+.history-row{border-bottom:1px solid #edf1f5;color:#26384d}
+.timeout-panel{background:#fff9ed;border:1px solid #f0e2c4;color:#3e382b}
+.timeout-panel .muted{color:#776b54}
+.timeout-row{border-bottom:1px solid #eee3ce;color:#3e382b}
+.timeout-count{color:#805b19}
+.roster-team{background:#f6f9fc;border:1px solid #dce6ef;box-shadow:none}
+.roster-title{color:#294765!important}
+.roster-head{color:#718196}
+.roster-player{color:#31445b}
+.roster-player input,.team-name-field input{background:#ffffff;border:1px solid #d5deea;color:#203047}
+.roster-player input:focus,.team-name-field input:focus{border-color:#5b9bd2;box-shadow:0 0 0 3px #4a9fff20}
+.roster-player input::placeholder,.team-name-field input::placeholder{color:#91a0b0}
+.roster-player.serving{background:#e6f6ec;outline:1px solid #9bd5b1}
+.server-mark{color:#17683b}
+.next-server{color:#536980}
+.server-turn{background:#ffffff;border:1px solid #dce5ef;color:#31465d}
+.server-turn.active{background:#eaf8f0;border:1px solid #45a878}
+.server-when{color:#687b90}
+.team-name-field{color:#52677e}
+.toast{color:#17683b}
+@media(max-width:430px){body{padding:12px 7px 28px}.app{padding:15px;border-radius:18px}}
+
+
+
+/* CONSISTENT TEAM COLOURS — Team A blue, Team B green */
+.team.a{background:linear-gradient(145deg,#287fc0 0%,#1769aa 100%);border-color:#1769aa}
+.team.b{background:linear-gradient(145deg,#329b62 0%,#27834b 100%);border-color:#27834b}
+.team.a .team-timeout{background:#e5f2ff;color:#15558f;border:1px solid #b8d9f6}
+.team.b .team-timeout{background:#e5f7ec;color:#17683b;border:1px solid #b9e5c9}
+.team.a .point{background:#e5f2ff;color:#15558f;border:1px solid #b8d9f6}
+.team.b .point{background:#e5f7ec;color:#17683b;border:1px solid #b9e5c9}
+.team-name-a{color:#1769aa!important}
+.team-name-a input{background:#f0f7ff!important;border:1px solid #b8d6f1!important}
+.team-name-b{color:#27834b!important}
+.team-name-b input{background:#effaf3!important;border:1px solid #b9dfc6!important}
+.roster-a{background:#eff6ff;border:1px solid #bcd8f2}
+.roster-a .roster-title{color:#1769aa!important}
+.roster-a .roster-player input{background:#fafdff;border-color:#c4dcf2}
+.roster-a .roster-player.serving{background:#dceeff;outline:1px solid #78b4e8}
+.roster-b{background:#eff9f2;border:1px solid #c1e3cb}
+.roster-b .roster-title{color:#27834b!important}
+.roster-b .roster-player input{background:#fbfffc;border-color:#c5e2ce}
+.roster-b .roster-player.serving{background:#ddf3e4;outline:1px solid #83c99a}
+.server-turn-a{background:#eff6ff;border-color:#bcd8f2;color:#194d78}
+.server-turn-a strong{color:#1769aa!important}
+.server-turn-a.active{background:#dceeff;border-color:#3984c8}
+.server-turn-b{background:#eff9f2;border-color:#c1e3cb;color:#205c38}
+.server-turn-b strong{color:#27834b!important}
+.server-turn-b.active{background:#ddf3e4;border-color:#45a878}
+#startA{border-color:#b8d6f1;color:#15558f}
+#startB{border-color:#b9dfc6;color:#17683b}
+#startA.active{background:#e4f1ff;border-color:#3984c8;color:#15558f}
+#startB.active{background:#e5f7ec;border-color:#45a878;color:#17683b}
+
 </style>
 </head>
 <body>
 <main><section class="app">
 <h1>🏐 6v6 Volleyball Tracker</h1>
-<p class="sub">Score · Custom service/toss rotation · Match timer · Undo</p>
+<p class="sub">Score · Player rosters · Serving rotation · Timeouts · Match timer</p>
 
-<h2>1. Choose the first serving team</h2>
+<h2>1. Team names</h2>
+<div class="team-name-fields">
+ <label class="team-name-field team-name-a">TEAM A NAME<input id="teamNameA" type="text" maxlength="24" placeholder="Enter Team A name"></label>
+ <label class="team-name-field team-name-b">TEAM B NAME<input id="teamNameB" type="text" maxlength="24" placeholder="Enter Team B name"></label>
+</div>
+<h2>2. Choose the first serving team</h2>
 <div class="server-options">
-<button class="server active" id="startA" type="button">Team A serves first</button>
-<button class="server" id="startB" type="button">Team B serves first</button>
+<button class="server active" id="startA" type="button" aria-pressed="true">Team A serves first</button>
+<button class="server" id="startB" type="button" aria-pressed="false">Team B serves first</button>
 </div>
 <p class="muted">Changing the starting server resets the match and its point history.</p>
 
- <h2>2. Match timer</h2>
+<h2>3. Team rosters — player names & numbers</h2>
+<p class="muted">Enter six players for each team. The highlighted player is next in the serving order.</p>
+<div class="rosters">
+ <section class="roster-team roster-a" aria-label="Team A roster">
+  <div class="roster-title" style="color:#1769aa">TEAM A ROSTER</div>
+  <div class="roster-head"><span>Order</span><span>Player name</span><span>Number</span></div>
+  <div id="rosterA"></div>
+ </section>
+ <section class="roster-team roster-b" aria-label="Team B roster">
+  <div class="roster-title" style="color:#27834b">TEAM B ROSTER</div>
+  <div class="roster-head"><span>Order</span><span>Player name</span><span>Number</span></div>
+  <div id="rosterB"></div>
+ </section>
+</div>
+
+
+
+ <h2>4. Match timer</h2>
 <div class="timer">
 <div class="eyebrow" style="color:#c5d3e6">ELAPSED MATCH TIME</div>
 <div class="clock" id="clock">00:00:00</div>
@@ -90,37 +288,40 @@ button{padding:10px 11px;border-radius:10px}
 <p class="muted" style="color:#c5d3e6;margin-bottom:0">Point entries record the elapsed match time and the clock time.</p>
 </div>
 
-<h2>3. Corrections & match controls</h2>
+<h2>5. Corrections & match controls</h2>
 <div class="controls">
 <button class="undo" id="undo" disabled>↶ Reverse last point</button>
 <button class="reset" id="reset">Reset match</button>
 </div>
 <div class="toast" id="message" role="status"></div>
 <div class="total"><span>Total points</span><span id="total">0</span></div>
-<h2>4. Score — tap the team that wins each point</h2>
+<h2>6. Score — tap the team that wins each point</h2>
 <div class="scores">
-<div class="team a"><div class="team-name">TEAM A</div><button class="team-timeout" id="timeoutA" type="button">⏱ Time out 1/2 · Team A</button><div class="score" id="scoreA">0</div><button class="point" id="pointA">+ Point A</button></div>
-<div class="team b"><div class="team-name">TEAM B</div><button class="team-timeout" id="timeoutB" type="button">⏱ Time out 1/2 · Team B</button><div class="score" id="scoreB">0</div><button class="point" id="pointB">+ Point B</button></div>
+<div class="team a"><div class="team-name" id="teamDisplayA">Team A</div><button class="team-timeout" id="timeoutA" type="button">⏱ Time out 1/2 · Team A</button><div class="score" id="scoreA">0</div><button class="point" id="pointA">+ Point A</button></div>
+<div class="team b"><div class="team-name" id="teamDisplayB">Team B</div><button class="team-timeout" id="timeoutB" type="button">⏱ Time out 1/2 · Team B</button><div class="score" id="scoreB">0</div><button class="point" id="pointB">+ Point B</button></div>
 </div>
-<h2>5. Timeout record</h2>
+
+<h2>7. Next action</h2>
+<div class="panel" aria-live="polite">
+<div class="eyebrow">UP NEXT</div><div class="next-team" id="nextTeam">TEAM A</div>
+<div class="next-action" id="nextAction">SERVICE</div>
+<div class="eyebrow" id="actionNumber">ACTION #1 · BEFORE POINT 1</div>
+<div class="next-server" id="nextServer"></div>
+<div class="server-turns" id="serverTurns" aria-live="polite"></div>
+</div>
+
+<h2>8. Rotation pattern</h2>
+<div class="steps" id="steps"></div>
+<p class="muted">Pattern repeats after the sixth action: starting team serves, then the other team tosses, starter tosses, other team serves, starter tosses, other team tosses.</p>
+
+
+<h2>9. Timeout record</h2>
 <div class="timeout-panel">
  <p class="muted" style="margin-top:0">Each team may request up to 2 timeouts per match. Each request records the score and time.</p>
  <div class="timeout-log" id="timeoutHistory"><p class="muted">No timeouts requested yet.</p></div>
 </div>
 
-<h2>5. Next action</h2>
-<div class="panel" aria-live="polite">
-<div class="eyebrow">UP NEXT</div><div class="next-team" id="nextTeam">TEAM A</div>
-<div class="next-action" id="nextAction">SERVICE</div>
-<div class="eyebrow" id="actionNumber">ACTION #1 · BEFORE POINT 1</div>
-</div>
-
-<h2>5. Rotation pattern</h2>
-<div class="steps" id="steps"></div>
-<p class="muted">Pattern repeats after the sixth action: starting team serves, then the other team tosses, starter tosses, other team serves, starter tosses, other team tosses.</p>
-
-
-<h2>7. Point & time record</h2>
+<h2>10. Point & time record</h2>
 <div class="history" id="history"><p class="muted">No points recorded yet.</p></div>
 <p class="muted">Match score, starting team, point history and timer state are saved in this browser on this device. Keep using the same browser to continue. Clearing browser data may erase the saved match.</p>
 </section></main>
@@ -128,13 +329,20 @@ button{padding:10px 11px;border-radius:10px}
 (()=>{
  const KEY='volleyballTracker6v6_v2';
  const $=id=>document.getElementById(id);
- let state={first:'A',points:[],timeouts:[],elapsedMs:0,running:false,startedAt:null};
+ const defaultRosters=()=>({A:Array.from({length:6},(_,i)=>({name:'Player '+(i+1),number:''})),B:Array.from({length:6},(_,i)=>({name:'Player '+(i+1),number:''}))});
+ let state={first:'A',points:[],timeouts:[],rosters:defaultRosters(),teamNames:{A:'Team A',B:'Team B'},elapsedMs:0,running:false,startedAt:null};
  let ticker=null;
  function load(){
   try{
    const s=JSON.parse(localStorage.getItem(KEY));
    if(s&&['A','B'].includes(s.first)&&Array.isArray(s.points)&&s.points.every(p=>p&&['A','B'].includes(p.team))){
-    state={first:s.first,points:s.points,timeouts:Array.isArray(s.timeouts)?s.timeouts.filter(t=>t&&['A','B'].includes(t.team)).slice(0,4):[],elapsedMs:Number(s.elapsedMs)||0,running:!!s.running,startedAt:Number(s.startedAt)||null};
+    const defaults=defaultRosters();
+    const savedRosters={A:[],B:[]};
+    for(const team of ['A','B']){
+     const saved=s.rosters&&Array.isArray(s.rosters[team])?s.rosters[team]:[];
+     savedRosters[team]=Array.from({length:6},(_,i)=>({name:String(saved[i]?.name??defaults[team][i].name),number:String(saved[i]?.number??'')}));
+    }
+    state={first:s.first,points:s.points,timeouts:Array.isArray(s.timeouts)?s.timeouts.filter(t=>t&&['A','B'].includes(t.team)).slice(0,4):[],rosters:savedRosters,teamNames:{A:String(s.teamNames?.A||'Team A'),B:String(s.teamNames?.B||'Team B')},elapsedMs:Number(s.elapsedMs)||0,running:!!s.running,startedAt:Number(s.startedAt)||null};
     if(state.running&&state.startedAt)state.elapsedMs+=Math.max(0,Date.now()-state.startedAt);
     state.running=false;state.startedAt=null;
    }
@@ -151,40 +359,83 @@ button{padding:10px 11px;border-radius:10px}
   {team:starter,action:'TOSS'},
   {team:other,action:'TOSS'}
  ]}
+ function serverIndex(team){
+  const seq=sequence();
+  let completedServices=0;
+  for(let i=0;i<state.points.length;i++){
+   const action=seq[i%seq.length];
+   if(action.team===team&&action.action==='SERVICE')completedServices++;
+  }
+  const initialIndex=team===state.first?0:1;
+  return (initialIndex+completedServices)%6;
+ }
+ function safe(value){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+ function teamName(team){return (state.teamNames[team]||'').trim()||('Team '+team);}
+
+ function renderServerTurns(actionIndex,cur){
+  const seq=sequence();
+  $('serverTurns').innerHTML=['A','B'].map(team=>{
+   const rosterIndex=serverIndex(team),player=state.rosters[team][rosterIndex];
+   let distance=0;
+   while(distance<seq.length && !(seq[(actionIndex+distance)%seq.length].team===team && seq[(actionIndex+distance)%seq.length].action==='SERVICE'))distance++;
+   const actionNo=state.points.length+distance+1;
+   const when=distance===0?'SERVING NOW · Action #'+actionNo:'Next serve in '+distance+' point'+(distance===1?'':'s')+' · Action #'+actionNo;
+   const isNow=distance===0 && cur.team===team && cur.action==='SERVICE';
+   return `<div class="server-turn server-turn-${team.toLowerCase()} ${isNow?'active':''}"><strong style="color:${team==='A'?'#1769aa':'#27834b'}">${safe(teamName(team))} · Roster ${rosterIndex+1}</strong>${safe(player.name||'Player '+(rosterIndex+1))}${player.number!==''?' · Jersey #'+safe(player.number):' · Jersey number not set'}<span class="server-when">${when}</span></div>`;
+  }).join('');
+ }
+ function renderRosters(){
+  for(const team of ['A','B']){
+   const host=$('roster'+team),server=serverIndex(team);
+   host.innerHTML=state.rosters[team].map((player,i)=>`<div class="roster-player ${i===server?'serving':''}">
+    <span class="muted">${i+1}.</span>
+    <input aria-label="Team ${team} player ${i+1} name" data-team="${team}" data-index="${i}" data-field="name" type="text" maxlength="28" placeholder="Player ${i+1}" value="${safe(player.name)}">
+    <input aria-label="Team ${team} player ${i+1} number" class="number" data-team="${team}" data-index="${i}" data-field="number" type="number" min="0" max="999" placeholder="#" value="${safe(player.number)}">
+    <span class="server-mark">${i===server?'▶ NEXT SERVER':''}</span>
+   </div>`).join('');
+  }
+ }
  function render(){
   const a=state.points.filter(p=>p.team==='A').length,b=state.points.filter(p=>p.team==='B').length;
   $('scoreA').textContent=a;$('scoreB').textContent=b;$('total').textContent=state.points.length;
-  $('startA').classList.toggle('active',state.first==='A');$('startB').classList.toggle('active',state.first==='B');
+  $('teamNameA').value=state.teamNames.A;$('teamNameB').value=state.teamNames.B;
+  $('teamDisplayA').textContent=teamName('A');$('teamDisplayB').textContent=teamName('B');document.querySelector('[aria-label="Team A roster"] .roster-title').textContent=teamName('A')+' ROSTER';document.querySelector('[aria-label="Team B roster"] .roster-title').textContent=teamName('B')+' ROSTER';
+  $('startA').textContent=teamName('A')+' serves first';$('startB').textContent=teamName('B')+' serves first';
+  $('pointA').textContent='+ Point · '+teamName('A');$('pointB').textContent='+ Point · '+teamName('B');
+  $('startA').classList.toggle('active',state.first==='A');$('startB').classList.toggle('active',state.first==='B');$('startA').setAttribute('aria-pressed',String(state.first==='A'));$('startB').setAttribute('aria-pressed',String(state.first==='B'));
   const seq=sequence(),idx=state.points.length%seq.length,cur=seq[idx];
-  $('nextTeam').textContent='TEAM '+cur.team;$('nextTeam').style.color=cur.team==='A'?'#1769aa':'#27834b';
+  $('nextTeam').textContent=teamName(cur.team);$('nextTeam').style.color=cur.team==='A'?'#1769aa':'#27834b';
   $('nextAction').textContent=cur.action;$('actionNumber').textContent='ACTION #'+(state.points.length+1)+' · BEFORE POINT '+(state.points.length+1);
-  $('steps').innerHTML=seq.map((s,i)=>`<div class="step ${i===idx?'current':''}"><span class="num">${i+1}.</span><span class="who">Team ${s.team}</span><span class="action">${s.action}</span>${i===idx?'<span class="tag">NEXT</span>':''}</div>`).join('');
+  $('nextServer').textContent='Next server for both teams';
+  renderServerTurns(idx,cur);
+  renderRosters();
+  $('steps').innerHTML=seq.map((s,i)=>`<div class="step ${i===idx?'current':''}"><span class="num">${i+1}.</span><span class="who">${safe(teamName(s.team))}</span><span class="action">${s.action}</span>${i===idx?'<span class="tag">NEXT</span>':''}</div>`).join('');
   $('undo').disabled=!state.points.length;
-  $('history').innerHTML=state.points.length?state.points.map((p,i)=>`<div class="history-row"><span><strong>Point ${i+1} · Team ${p.team}</strong><br><span class="muted">${p.clockLabel}</span></span><strong>${p.elapsedLabel}</strong></div>`).reverse().join(''):'<p class="muted">No points recorded yet.</p>';
+  $('history').innerHTML=state.points.length?state.points.map((p,i)=>`<div class="history-row"><span><strong>Point ${i+1} · ${safe(teamName(p.team))}</strong><br><span class="muted">${p.clockLabel}</span></span><strong>${p.elapsedLabel}</strong></div>`).reverse().join(''):'<p class="muted">No points recorded yet.</p>';
   const usedA=state.timeouts.filter(t=>t.team==='A').length,usedB=state.timeouts.filter(t=>t.team==='B').length;
-  $('timeoutA').textContent=usedA>=2?'✓ Time outs used 2/2 · Team A':'⏱ Time out '+(usedA+1)+'/2 · Team A';
-  $('timeoutB').textContent=usedB>=2?'✓ Time outs used 2/2 · Team B':'⏱ Time out '+(usedB+1)+'/2 · Team B';
+  $('timeoutA').textContent=usedA>=2?'✓ Time outs used 2/2 · '+teamName('A'):'⏱ Time out '+(usedA+1)+'/2 · '+teamName('A');
+  $('timeoutB').textContent=usedB>=2?'✓ Time outs used 2/2 · '+teamName('B'):'⏱ Time out '+(usedB+1)+'/2 · '+teamName('B');
   $('timeoutA').disabled=usedA>=2;$('timeoutB').disabled=usedB>=2;
-  $('timeoutHistory').innerHTML=state.timeouts.length?state.timeouts.map((t,i)=>{const teamRequestNo=state.timeouts.slice(0,i+1).filter(x=>x.team===t.team).length;return `<div class="timeout-row"><strong>Time out ${teamRequestNo}/2 · Team ${t.team}</strong><br>Score at request: <strong>Team A: ${t.scoreA} · Team B: ${t.scoreB}</strong><br><span class="muted">Clock: ${t.clockLabel} · Match time: ${t.elapsedLabel}</span></div>`;}).reverse().join(''):'<p class="muted">No timeouts requested yet.</p>';
+  $('timeoutHistory').innerHTML=state.timeouts.length?state.timeouts.map((t,i)=>{const teamRequestNo=state.timeouts.slice(0,i+1).filter(x=>x.team===t.team).length;return `<div class="timeout-row"><strong>Time out ${teamRequestNo}/2 · ${safe(teamName(t.team))}</strong><br>Score at request: <strong>${safe(teamName('A'))}: ${t.scoreA} · ${safe(teamName('B'))}: ${t.scoreB}</strong><br><span class="muted">Clock: ${t.clockLabel} · Match time: ${t.elapsedLabel}</span></div>`;}).reverse().join(''):'<p class="muted">No timeouts requested yet.</p>';
   $('clock').textContent=fmt(elapsed());$('timerToggle').textContent=state.running?'Ⅱ Pause timer':'▶ Start timer';
  }
  function add(team){
   const now=Date.now(),ms=elapsed(),d=new Date(now);
   state.points.push({team,elapsedMs:ms,elapsedLabel:fmt(ms),clockLabel:d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})});
-  save();render();$('message').textContent='Point recorded for Team '+team+' at '+fmt(ms)+'.';
+  save();render();$('message').textContent='Point recorded for '+teamName(team)+' at '+fmt(ms)+'.';
  }
  function requestTimeout(team){
   const used=state.timeouts.filter(t=>t.team===team).length;
-  if(used>=2){$('message').textContent='Team '+team+' has used both timeouts.';return;}
+  if(used>=2){$('message').textContent=teamName(team)+' has used both timeouts.';return;}
   const now=Date.now(),ms=elapsed(),d=new Date(now);
   const scoreA=state.points.filter(p=>p.team==='A').length;
   const scoreB=state.points.filter(p=>p.team==='B').length;
   const clockLabel=d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
   state.timeouts.push({team,scoreA,scoreB,elapsedMs:ms,elapsedLabel:fmt(ms),clockLabel});
   save();render();
-  $('message').textContent='Team '+team+' timeout recorded at Team A: '+scoreA+' · Team B: '+scoreB+' ('+clockLabel+').';
+  $('message').textContent=teamName(team)+' timeout recorded at '+teamName('A')+': '+scoreA+' · '+teamName('B')+': '+scoreB+' ('+clockLabel+').';
  }
- function undo(){if(!state.points.length)return;const p=state.points.pop();save();render();$('message').textContent='Last point for Team '+p.team+' reversed. Score, rotation and point record restored.';}
+ function undo(){if(!state.points.length)return;const p=state.points.pop();save();render();$('message').textContent='Last point for '+teamName(p.team)+' reversed. Score, rotation and point record restored.';}
  function toggleTimer(){
   if(state.running){state.elapsedMs=elapsed();state.running=false;state.startedAt=null;$('message').textContent='Timer paused.';}
   else{state.running=true;state.startedAt=Date.now();$('message').textContent='Timer started.';}
@@ -193,12 +444,34 @@ button{padding:10px 11px;border-radius:10px}
  function resetTimer(){state.elapsedMs=0;state.startedAt=state.running?Date.now():null;save();render();$('message').textContent='Timer reset to 00:00:00.';}
  function resetMatch(){
   if(!confirm('Reset the match, scores, point history and timer?'))return;
-  state={first:state.first,points:[],timeouts:[],elapsedMs:0,running:false,startedAt:null};save();render();$('message').textContent='Match and timer reset.';
+  state={first:state.first,points:[],timeouts:[],rosters:state.rosters,teamNames:state.teamNames,elapsedMs:0,running:false,startedAt:null};save();render();$('message').textContent='Match and timer reset. Team names and rosters retained.';
  }
  function choose(first){
-  if(first===state.first)return;
-  if((state.points.length||elapsed()>0)&&!confirm('Changing the starting server will clear the current match, point history and timer. Continue?'))return;
-  state={first,points:[],timeouts:[],elapsedMs:0,running:false,startedAt:null};save();render();$('message').textContent='Team '+first+' will serve first.';
+  if(first!=='A'&&first!=='B')return;
+  if(first===state.first){
+   $('message').textContent=teamName(first)+' is already selected to serve first.';
+   render();
+   return;
+  }
+  if((state.points.length||state.timeouts.length||elapsed()>0)&&!confirm('Change the first serving team to '+teamName(first)+'? This will clear the current score, point and timeout history, and match timer. Player rosters and team names will be kept.'))return;
+  state={first,points:[],timeouts:[],rosters:state.rosters,teamNames:state.teamNames,elapsedMs:0,running:false,startedAt:null};
+  save();
+  render();
+  $('message').textContent='✓ '+teamName(first)+' selected to serve first. Player 1 will serve first for this team; the other team starts with Player 2.';
+ }
+ $('teamNameA').addEventListener('input',event=>updateTeamName('A',event.target.value));
+ $('teamNameB').addEventListener('input',event=>updateTeamName('B',event.target.value));
+ function updateTeamName(team,value){state.teamNames[team]=value.slice(0,24);save();const a=$('startA'),b=$('startB'),pa=$('pointA'),pb=$('pointB');a.textContent=teamName('A')+' serves first';b.textContent=teamName('B')+' serves first';$('teamDisplayA').textContent=teamName('A');$('teamDisplayB').textContent=teamName('B');document.querySelector('[aria-label="Team A roster"] .roster-title').textContent=teamName('A')+' ROSTER';document.querySelector('[aria-label="Team B roster"] .roster-title').textContent=teamName('B')+' ROSTER';pa.textContent='+ Point · '+teamName('A');pb.textContent='+ Point · '+teamName('B');renderRosters();const seq=sequence(),idx=state.points.length%seq.length,cur=seq[idx];$('nextTeam').textContent=teamName(cur.team);renderServerTurns(idx,cur);$('timeoutA').textContent=state.timeouts.filter(t=>t.team==='A').length>=2?'✓ Time outs used 2/2 · '+teamName('A'):'⏱ Time out '+(state.timeouts.filter(t=>t.team==='A').length+1)+'/2 · '+teamName('A');$('timeoutB').textContent=state.timeouts.filter(t=>t.team==='B').length>=2?'✓ Time outs used 2/2 · '+teamName('B'):'⏱ Time out '+(state.timeouts.filter(t=>t.team==='B').length+1)+'/2 · '+teamName('B');$('timeoutHistory').innerHTML=state.timeouts.length?state.timeouts.map((t,i)=>{const n=state.timeouts.slice(0,i+1).filter(x=>x.team===t.team).length;return `<div class="timeout-row"><strong>Time out ${n}/2 · ${safe(teamName(t.team))}</strong><br>Score at request: <strong>${safe(teamName('A'))}: ${t.scoreA} · ${safe(teamName('B'))}: ${t.scoreB}</strong><br><span class="muted">Clock: ${t.clockLabel} · Match time: ${t.elapsedLabel}</span></div>`;}).reverse().join(''):'<p class="muted">No timeouts requested yet.</p>';const h=$('history');h.innerHTML=state.points.length?state.points.map((p,i)=>`<div class="history-row"><span><strong>Point ${i+1} · ${safe(teamName(p.team))}</strong><br><span class="muted">${p.clockLabel}</span></span><strong>${p.elapsedLabel}</strong></div>`).reverse().join(''):'<p class="muted">No points recorded yet.</p>';}
+ $('rosterA').addEventListener('input',updateRoster);$('rosterB').addEventListener('input',updateRoster);
+ function updateRoster(event){
+  const input=event.target;
+  if(!input.matches('input[data-team][data-index][data-field]'))return;
+  const team=input.dataset.team,index=Number(input.dataset.index),field=input.dataset.field;
+  if(!['A','B'].includes(team)||!Number.isInteger(index)||index<0||index>5||!['name','number'].includes(field))return;
+  state.rosters[team][index][field]=input.value;
+  save();
+  const seq=sequence(),idx=state.points.length%seq.length,cur=seq[idx];
+  renderServerTurns(idx,cur);
  }
  $('pointA').addEventListener('click',()=>add('A'));$('pointB').addEventListener('click',()=>add('B'));
  $('timeoutA').addEventListener('click',()=>requestTimeout('A'));$('timeoutB').addEventListener('click',()=>requestTimeout('B'));
