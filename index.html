@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#edf3f9">
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./icons/icon-192.png">
@@ -241,6 +241,28 @@ h2:before{background:#4389ca}
 #startA.active{background:#e4f1ff;border-color:#3984c8;color:#15558f}
 #startB.active{background:#e5f7ec;border-color:#45a878;color:#17683b}
 
+
+.export-panel{display:grid;gap:9px;background:#f5f8fc;border:1px solid #dce6ef;border-radius:14px;padding:13px}
+.export-panel button{width:100%}.export-pdf{background:#e4f1ff;color:#15558f;border:1px solid #b8d6f1}.export-email{background:#e5f7ec;color:#17683b;border:1px solid #b9dfc6}
+.email-label{font-size:.78rem;font-weight:800;color:#52677e}.export-panel input{width:100%;border:1px solid #cbd9e7;border-radius:9px;padding:10px;font:inherit;color:#203047;background:#fff}
+@media print{body{background:#fff!important;padding:0!important;color:#17243a!important}.app{box-shadow:none!important;border:0!important;max-width:none!important;padding:0!important}.export-panel,.controls,.timer-buttons,.team-timeout,.point,#startA,#startB,.toast{display:none!important}.team,.timer,.panel,.roster-team,.timeout-panel{print-color-adjust:exact;-webkit-print-color-adjust:exact}h2{break-after:avoid}}
+
+
+/* Scoreboard touch lock: prevent accidental browser zoom while keeping vertical scrolling. */
+html,body{touch-action:pan-y; -webkit-text-size-adjust:100%;}
+button,.point,.team-timeout{touch-action:manipulation;}
+body, .app, .team, .panel, .timer, .step, .timeout-panel{-webkit-user-select:none;user-select:none;}
+input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:text;touch-action:pan-y;}
+
+
+/* Section 7: make the serving player's identity immediately visible */
+.server-player-name{display:block;font-size:.9rem;font-weight:900;line-height:1.25;margin-top:5px;padding:5px 7px;border-radius:7px;background:#dceeff;color:#15558f;overflow-wrap:anywhere}
+.server-jersey{display:inline-block;margin-top:5px;padding:4px 8px;border-radius:6px;font-size:.78rem;font-weight:900;letter-spacing:.035em;background:#c8e2fa;color:#104b80;border:1px solid #9fc9ed}
+.server-turn-b .server-player-name{background:#ddf3e4;color:#17683b}
+.server-turn-b .server-jersey{background:#c9ebd3;color:#145a32;border-color:#9ed4ae}
+.server-turn.active .server-player-name,.server-turn.active .server-jersey{box-shadow:0 0 0 2px #ffffffaa}
+@media print{.server-player-name,.server-jersey{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+
 </style>
 </head>
 <body>
@@ -324,6 +346,14 @@ h2:before{background:#4389ca}
 <h2>10. Point & time record</h2>
 <div class="history" id="history"><p class="muted">No points recorded yet.</p></div>
 <p class="muted">Match score, starting team, point history and timer state are saved in this browser on this device. Keep using the same browser to continue. Clearing browser data may erase the saved match.</p>
+<h2>11. Export match report</h2>
+<div class="export-panel">
+ <button type="button" id="savePdf" class="export-pdf">📄 Save match as PDF</button>
+ <label class="email-label" for="emailTo">Email report to</label>
+ <input id="emailTo" type="email" placeholder="name@example.com" autocomplete="email">
+ <button type="button" id="emailReport" class="export-email">✉️ Email match report</button>
+ <p class="muted">PDF opens your browser’s print dialog; choose “Save as PDF”. Email opens your device’s default email app with the match report prepared for you.</p>
+</div>
 </section></main>
 <script>
 (()=>{
@@ -381,7 +411,7 @@ h2:before{background:#4389ca}
    const actionNo=state.points.length+distance+1;
    const when=distance===0?'SERVING NOW · Action #'+actionNo:'Next serve in '+distance+' point'+(distance===1?'':'s')+' · Action #'+actionNo;
    const isNow=distance===0 && cur.team===team && cur.action==='SERVICE';
-   return `<div class="server-turn server-turn-${team.toLowerCase()} ${isNow?'active':''}"><strong style="color:${team==='A'?'#1769aa':'#27834b'}">${safe(teamName(team))} · Roster ${rosterIndex+1}</strong>${safe(player.name||'Player '+(rosterIndex+1))}${player.number!==''?' · Jersey #'+safe(player.number):' · Jersey number not set'}<span class="server-when">${when}</span></div>`;
+   return `<div class="server-turn server-turn-${team.toLowerCase()} ${isNow?'active':''}"><strong style="color:${team==='A'?'#1769aa':'#27834b'}">${safe(teamName(team))} · Roster ${rosterIndex+1}</strong><span class="server-player-name">${safe(player.name||'Player '+(rosterIndex+1))}</span><span class="server-jersey">${player.number!==''?'JERSEY #'+safe(player.number):'JERSEY NUMBER NOT SET'}</span><span class="server-when">${when}</span></div>`;
   }).join('');
  }
  function renderRosters(){
@@ -473,6 +503,36 @@ h2:before{background:#4389ca}
   const seq=sequence(),idx=state.points.length%seq.length,cur=seq[idx];
   renderServerTurns(idx,cur);
  }
+
+ function reportText(){
+  const scoreA=state.points.filter(p=>p.team==='A').length,scoreB=state.points.filter(p=>p.team==='B').length;
+  const lines=['6v6 VOLLEYBALL MATCH REPORT','',`${teamName('A')}: ${scoreA}  |  ${teamName('B')}: ${scoreB}`,`Total points: ${state.points.length}`,`First serving team: ${teamName(state.first)}`,`Elapsed match time: ${fmt(elapsed())}`,'', 'ROSTERS'];
+  for(const team of ['A','B']){lines.push('',teamName(team));state.rosters[team].forEach((p,i)=>lines.push(`${i+1}. ${p.name||'Player '+(i+1)}${p.number!==''?' · #'+p.number:''}`));}
+  lines.push('', 'TIMEOUT RECORD');
+  if(!state.timeouts.length)lines.push('No timeouts requested.');
+  state.timeouts.forEach((t,i)=>{const n=state.timeouts.slice(0,i+1).filter(x=>x.team===t.team).length;lines.push(`Timeout ${n}/2 · ${teamName(t.team)} · Score ${teamName('A')} ${t.scoreA} - ${teamName('B')} ${t.scoreB} · ${t.clockLabel} · ${t.elapsedLabel}`);});
+  lines.push('', 'POINT & TIME RECORD');
+  if(!state.points.length)lines.push('No points recorded.');
+  state.points.forEach((p,i)=>lines.push(`Point ${i+1}: ${teamName(p.team)} · ${p.clockLabel} · ${p.elapsedLabel}`));
+  lines.push('',`Generated: ${new Date().toLocaleString()}`);
+  return lines.join('\n');
+ }
+ function savePdf(){
+  const text=reportText();const w=window.open('','_blank');
+  if(!w){$('message').textContent='Please allow pop-ups to create the PDF report.';return;}
+  const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Volleyball Match Report</title><style>body{font:14px Arial,sans-serif;color:#17243a;margin:32px;line-height:1.5}h1{font-size:22px;color:#183451}pre{white-space:pre-wrap;font:13px Arial,sans-serif;line-height:1.65}@page{margin:18mm}</style></head><body><h1>🏐 Volleyball Match Report</h1><pre>${esc(text)}</pre><script>window.onload=()=>window.print()<\/script></body></html>`);
+  w.document.close();
+ }
+ function emailReport(){
+  const to=$('emailTo').value.trim();
+  if(!to||!$('emailTo').checkValidity()){$('message').textContent='Please enter a valid email address first.';$('emailTo').focus();return;}
+  const subject=`Volleyball match report: ${teamName('A')} vs ${teamName('B')}`;
+  window.location.href='mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(reportText());
+  $('message').textContent='Your email app should open with the match report ready to send.';
+ }
+ $('savePdf').addEventListener('click',savePdf);$('emailReport').addEventListener('click',emailReport);
+
  $('pointA').addEventListener('click',()=>add('A'));$('pointB').addEventListener('click',()=>add('B'));
  $('timeoutA').addEventListener('click',()=>requestTimeout('A'));$('timeoutB').addEventListener('click',()=>requestTimeout('B'));
  $('undo').addEventListener('click',undo);$('reset').addEventListener('click',resetMatch);
@@ -488,5 +548,32 @@ if ("serviceWorker" in navigator) {
       .catch(error => console.error("Service worker:", error));
   });
 }
+</script>
+<style>
+/* Best-effort fixed-scale scoreboard behaviour across touch browsers. */
+html,body{touch-action:pan-x pan-y;overscroll-behavior: none;}
+button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+input,textarea,[contenteditable="true"]{touch-action:pan-x pan-y;user-select:text;-webkit-user-select:text;}
+body{-webkit-user-select:none;user-select:none;}
+</style>
+<script>
+// Block multi-touch pinch and Safari gesture zoom where the browser permits it.
+const blockGestureZoom=e=>{if(e.cancelable)e.preventDefault();};
+['gesturestart','gesturechange','gestureend'].forEach(type=>document.addEventListener(type,blockGestureZoom,{passive:false}));
+document.addEventListener('touchstart',e=>{if(e.touches && e.touches.length>1)blockGestureZoom(e);},{passive:false});
+document.addEventListener('touchmove',e=>{if(e.touches && e.touches.length>1)blockGestureZoom(e);},{passive:false});
+let lastTapAt=0;
+document.addEventListener('touchend',e=>{
+ const now=Date.now();
+ const editable=e.target.closest('input,textarea,[contenteditable="true"]');
+ if(!editable && now-lastTapAt<320)blockGestureZoom(e);
+ lastTapAt=now;
+},{passive:false});
+// Block Ctrl/Command + mouse-wheel zoom while the app page has focus.
+document.addEventListener('wheel',e=>{if(e.ctrlKey||e.metaKey)blockGestureZoom(e);},{passive:false});
+// Block common keyboard browser-zoom shortcuts while this page is active.
+document.addEventListener('keydown',e=>{
+ if((e.ctrlKey||e.metaKey) && ['+','=','-','_','0'].includes(e.key))blockGestureZoom(e);
+});
 </script>
 </body></html>
