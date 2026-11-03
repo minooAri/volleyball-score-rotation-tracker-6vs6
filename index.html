@@ -254,15 +254,6 @@ button,.point,.team-timeout{touch-action:manipulation;}
 body, .app, .team, .panel, .timer, .step, .timeout-panel{-webkit-user-select:none;user-select:none;}
 input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:text;touch-action:pan-y;}
 
-
-/* Section 7: make the serving player's identity immediately visible */
-.server-player-name{display:block;font-size:.9rem;font-weight:900;line-height:1.25;margin-top:5px;padding:5px 7px;border-radius:7px;background:#dceeff;color:#15558f;overflow-wrap:anywhere}
-.server-jersey{display:inline-block;margin-top:5px;padding:4px 8px;border-radius:6px;font-size:.78rem;font-weight:900;letter-spacing:.035em;background:#c8e2fa;color:#104b80;border:1px solid #9fc9ed}
-.server-turn-b .server-player-name{background:#ddf3e4;color:#17683b}
-.server-turn-b .server-jersey{background:#c9ebd3;color:#145a32;border-color:#9ed4ae}
-.server-turn.active .server-player-name,.server-turn.active .server-jersey{box-shadow:0 0 0 2px #ffffffaa}
-@media print{.server-player-name,.server-jersey{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
-
 </style>
 </head>
 <body>
@@ -411,7 +402,7 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
    const actionNo=state.points.length+distance+1;
    const when=distance===0?'SERVING NOW · Action #'+actionNo:'Next serve in '+distance+' point'+(distance===1?'':'s')+' · Action #'+actionNo;
    const isNow=distance===0 && cur.team===team && cur.action==='SERVICE';
-   return `<div class="server-turn server-turn-${team.toLowerCase()} ${isNow?'active':''}"><strong style="color:${team==='A'?'#1769aa':'#27834b'}">${safe(teamName(team))} · Roster ${rosterIndex+1}</strong><span class="server-player-name">${safe(player.name||'Player '+(rosterIndex+1))}</span><span class="server-jersey">${player.number!==''?'JERSEY #'+safe(player.number):'JERSEY NUMBER NOT SET'}</span><span class="server-when">${when}</span></div>`;
+   return `<div class="server-turn server-turn-${team.toLowerCase()} ${isNow?'active':''}"><strong style="color:${team==='A'?'#1769aa':'#27834b'}">${safe(teamName(team))} · Roster ${rosterIndex+1}</strong>${safe(player.name||'Player '+(rosterIndex+1))}${player.number!==''?' · Jersey #'+safe(player.number):' · Jersey number not set'}<span class="server-when">${when}</span></div>`;
   }).join('');
  }
  function renderRosters(){
