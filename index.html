@@ -25,7 +25,7 @@ button:disabled{opacity:.42;cursor:not-allowed}
 .step .num{color:#718096;width:17px}.step .who{flex:1;font-weight:750}.action{font-size:.82rem;font-weight:850}.tag{font-size:.68rem;background:#d8f3e3;color:#17683b;border-radius:20px;padding:4px 8px;font-weight:850}
 .timer{background:#10233f;color:#fff;border-radius:16px;padding:17px;text-align:center}.clock{font-size:2.5rem;font-weight:850;letter-spacing:.04em;font-variant-numeric:tabular-nums;margin:4px 0 12px}
 .timer-buttons button{background:#fff;color:#17243a}.timer-buttons .secondary{background:#dce7f5}
-.undo{background:#fff1d9;color:#805000}.reset{background:#fff0f0;color:#a32626}.history{max-height:260px;overflow:auto;border-top:1px solid #e5ebf2;margin-top:8px}
+.end-match{background:#183b5b;color:#fff;border:1px solid #183b5b}.completed-banner{display:none;margin:10px 0;padding:12px;border-radius:12px;background:#e8f6ed;border:1px solid #b9dfc6;color:#17683b;font-weight:800}.completed-banner.show{display:block}.undo{background:#fff1d9;color:#805000}.reset{background:#fff0f0;color:#a32626}.history{max-height:260px;overflow:auto;border-top:1px solid #e5ebf2;margin-top:8px}
 .history-row{display:grid;grid-template-columns:1fr auto;gap:8px;padding:9px 2px;border-bottom:1px solid #edf1f5;font-size:.86rem}
 .total{display:flex;justify-content:space-between;align-items:center;padding:13px 2px 3px;font-weight:800}
 .timeout-panel{background:#fff8e8;border:1px solid #f0dfb8;border-radius:16px;padding:15px}
@@ -245,7 +245,7 @@ h2:before{background:#4389ca}
 .export-panel{display:grid;gap:9px;background:#f5f8fc;border:1px solid #dce6ef;border-radius:14px;padding:13px}
 .export-panel button{width:100%}.export-pdf{background:#e4f1ff;color:#15558f;border:1px solid #b8d6f1}.export-email{background:#e5f7ec;color:#17683b;border:1px solid #b9dfc6}
 .email-label{font-size:.78rem;font-weight:800;color:#52677e}.export-panel input{width:100%;border:1px solid #cbd9e7;border-radius:9px;padding:10px;font:inherit;color:#203047;background:#fff}
-@media print{body{background:#fff!important;padding:0!important;color:#17243a!important}.app{box-shadow:none!important;border:0!important;max-width:none!important;padding:0!important}.export-panel,.controls,.timer-buttons,.team-timeout,.point,#startA,#startB,.toast{display:none!important}.team,.timer,.panel,.roster-team,.timeout-panel{print-color-adjust:exact;-webkit-print-color-adjust:exact}h2{break-after:avoid}}
+@media print{body{background:#fff!important;padding:0!important;color:#17243a!important}.app{box-shadow:none!important;border:0!important;max-width:none!important;padding:0!important}.export-panel,.controls,.timer-buttons,.team-timeout,.point,#startA,#startB,.toast,#endMatch{display:none!important}.team,.timer,.panel,.roster-team,.timeout-panel{print-color-adjust:exact;-webkit-print-color-adjust:exact}h2{break-after:avoid}}
 
 
 /* Scoreboard touch lock: prevent accidental browser zoom while keeping vertical scrolling. */
@@ -360,7 +360,7 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
  const KEY='volleyballTracker6v6_v2';
  const $=id=>document.getElementById(id);
  const defaultRosters=()=>({A:Array.from({length:6},(_,i)=>({name:'Player '+(i+1),number:''})),B:Array.from({length:6},(_,i)=>({name:'Player '+(i+1),number:''}))});
- let state={first:'A',points:[],timeouts:[],rosters:defaultRosters(),teamNames:{A:'Team A',B:'Team B'},elapsedMs:0,running:false,startedAt:null};
+ let state={first:'A',points:[],timeouts:[],rosters:defaultRosters(),teamNames:{A:'Team A',B:'Team B'},elapsedMs:0,running:false,startedAt:null,ended:false,completedAt:null,finalElapsedMs:null};
  let ticker=null;
  function load(){
   try{
@@ -372,7 +372,7 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
      const saved=s.rosters&&Array.isArray(s.rosters[team])?s.rosters[team]:[];
      savedRosters[team]=Array.from({length:6},(_,i)=>({name:String(saved[i]?.name??defaults[team][i].name),number:String(saved[i]?.number??'')}));
     }
-    state={first:s.first,points:s.points,timeouts:Array.isArray(s.timeouts)?s.timeouts.filter(t=>t&&['A','B'].includes(t.team)).slice(0,4):[],rosters:savedRosters,teamNames:{A:String(s.teamNames?.A||'Team A'),B:String(s.teamNames?.B||'Team B')},elapsedMs:Number(s.elapsedMs)||0,running:!!s.running,startedAt:Number(s.startedAt)||null};
+    state={first:s.first,points:s.points,timeouts:Array.isArray(s.timeouts)?s.timeouts.filter(t=>t&&['A','B'].includes(t.team)).slice(0,4):[],rosters:savedRosters,teamNames:{A:String(s.teamNames?.A||'Team A'),B:String(s.teamNames?.B||'Team B')},elapsedMs:Number(s.elapsedMs)||0,running:!!s.running,startedAt:Number(s.startedAt)||null,ended:!!s.ended,completedAt:s.completedAt||null,finalElapsedMs:Number.isFinite(Number(s.finalElapsedMs))?Number(s.finalElapsedMs):null};
     if(state.running&&state.startedAt)state.elapsedMs+=Math.max(0,Date.now()-state.startedAt);
     state.running=false;state.startedAt=null;
    }
@@ -440,21 +440,29 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
   renderServerTurns(idx,cur);
   renderRosters();
   $('steps').innerHTML=seq.map((s,i)=>`<div class="step ${i===idx?'current':''}"><span class="num">${i+1}.</span><span class="who">${safe(teamName(s.team))}</span><span class="action">${s.action}</span>${i===idx?'<span class="tag">NEXT</span>':''}</div>`).join('');
-  $('undo').disabled=!state.points.length;
+  $('undo').disabled=!state.points.length||state.ended;
+  $('pointA').disabled=state.ended;$('pointB').disabled=state.ended;$('timeoutA').disabled=state.ended;$('timeoutB').disabled=state.ended;
+  $('timerToggle').disabled=state.ended;$('timerReset').disabled=state.ended;$('endMatch').disabled=state.ended;
+  $('endMatch').textContent=state.ended?'✓ Match completed':'🏁 End match';
+  const finalA=state.points.filter(p=>p.team==='A').length,finalB=state.points.filter(p=>p.team==='B').length;
+  $('completedBanner').classList.toggle('show',state.ended);
+  $('completedBanner').textContent=state.ended?`MATCH COMPLETED · FINAL SCORE: ${teamName('A')} ${finalA} – ${teamName('B')} ${finalB} · Duration ${fmt(state.finalElapsedMs??state.elapsedMs)}${state.completedAt?' · '+new Date(state.completedAt).toLocaleString():''}`:'';
   $('history').innerHTML=state.points.length?state.points.map((p,i)=>`<div class="history-row"><span><strong>Point ${i+1} · ${safe(teamName(p.team))}</strong><br><span class="muted">${p.clockLabel}</span></span><strong>${p.elapsedLabel}</strong></div>`).reverse().join(''):'<p class="muted">No points recorded yet.</p>';
   const usedA=state.timeouts.filter(t=>t.team==='A').length,usedB=state.timeouts.filter(t=>t.team==='B').length;
   $('timeoutA').textContent=usedA>=2?'✓ Time outs used 2/2 · '+teamName('A'):'⏱ Time out '+(usedA+1)+'/2 · '+teamName('A');
   $('timeoutB').textContent=usedB>=2?'✓ Time outs used 2/2 · '+teamName('B'):'⏱ Time out '+(usedB+1)+'/2 · '+teamName('B');
-  $('timeoutA').disabled=usedA>=2;$('timeoutB').disabled=usedB>=2;
+  $('timeoutA').disabled=state.ended||usedA>=2;$('timeoutB').disabled=state.ended||usedB>=2;
   $('timeoutHistory').innerHTML=state.timeouts.length?state.timeouts.map((t,i)=>{const teamRequestNo=state.timeouts.slice(0,i+1).filter(x=>x.team===t.team).length;return `<div class="timeout-row"><strong>Time out ${teamRequestNo}/2 · ${safe(teamName(t.team))}</strong><br>Score at request: <strong>${safe(teamName('A'))}: ${t.scoreA} · ${safe(teamName('B'))}: ${t.scoreB}</strong><br><span class="muted">Clock: ${t.clockLabel} · Match time: ${t.elapsedLabel}</span></div>`;}).reverse().join(''):'<p class="muted">No timeouts requested yet.</p>';
   $('clock').textContent=fmt(elapsed());$('timerToggle').textContent=state.running?'Ⅱ Pause timer':'▶ Start timer';
  }
  function add(team){
+  if(state.ended){$('message').textContent='This match is completed. Reset the match to start a new one.';return;}
   const now=Date.now(),ms=elapsed(),d=new Date(now);
   state.points.push({team,elapsedMs:ms,elapsedLabel:fmt(ms),clockLabel:d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})});
   save();render();$('message').textContent='Point recorded for '+teamName(team)+' at '+fmt(ms)+'.';
  }
  function requestTimeout(team){
+  if(state.ended){$('message').textContent='This match is completed. Reset the match to start a new one.';return;}
   const used=state.timeouts.filter(t=>t.team===team).length;
   if(used>=2){$('message').textContent=teamName(team)+' has used both timeouts.';return;}
   const now=Date.now(),ms=elapsed(),d=new Date(now);
@@ -465,16 +473,23 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
   save();render();
   $('message').textContent=teamName(team)+' timeout recorded at '+teamName('A')+': '+scoreA+' · '+teamName('B')+': '+scoreB+' ('+clockLabel+').';
  }
- function undo(){if(!state.points.length)return;const p=state.points.pop();save();render();$('message').textContent='Last point for '+teamName(p.team)+' reversed. Score, rotation and point record restored.';}
+ function undo(){if(state.ended||!state.points.length)return;const p=state.points.pop();save();render();$('message').textContent='Last point for '+teamName(p.team)+' reversed. Score, rotation and point record restored.';}
  function toggleTimer(){
+  if(state.ended)return;
   if(state.running){state.elapsedMs=elapsed();state.running=false;state.startedAt=null;$('message').textContent='Timer paused.';}
   else{state.running=true;state.startedAt=Date.now();$('message').textContent='Timer started.';}
   save();render();
  }
- function resetTimer(){state.elapsedMs=0;state.startedAt=state.running?Date.now():null;save();render();$('message').textContent='Timer reset to 00:00:00.';}
+ function resetTimer(){if(state.ended)return;state.elapsedMs=0;state.startedAt=state.running?Date.now():null;save();render();$('message').textContent='Timer reset to 00:00:00.';}
+ function endMatch(){
+  if(state.ended)return;
+  if(!confirm('End this match and lock scoring, timeouts and timer? You can still export the final report.'))return;
+  state.finalElapsedMs=elapsed();state.elapsedMs=state.finalElapsedMs;state.running=false;state.startedAt=null;state.ended=true;state.completedAt=new Date().toISOString();
+  save();render();$('message').textContent='Match completed. Final score and match record are saved. Reset match / New match to begin again.';
+ }
  function resetMatch(){
   if(!confirm('Reset the match, scores, point history and timer?'))return;
-  state={first:state.first,points:[],timeouts:[],rosters:state.rosters,teamNames:state.teamNames,elapsedMs:0,running:false,startedAt:null};save();render();$('message').textContent='Match and timer reset. Team names and rosters retained.';
+  state={first:state.first,points:[],timeouts:[],rosters:state.rosters,teamNames:state.teamNames,elapsedMs:0,running:false,startedAt:null,ended:false,completedAt:null,finalElapsedMs:null};save();render();$('message').textContent='Match and timer reset. Team names and rosters retained.';
  }
  function choose(first){
   if(first!=='A'&&first!=='B')return;
@@ -484,7 +499,7 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
    return;
   }
   if((state.points.length||state.timeouts.length||elapsed()>0)&&!confirm('Change the first serving team to '+teamName(first)+'? This will clear the current score, point and timeout history, and match timer. Player rosters and team names will be kept.'))return;
-  state={first,points:[],timeouts:[],rosters:state.rosters,teamNames:state.teamNames,elapsedMs:0,running:false,startedAt:null};
+  state={first,points:[],timeouts:[],rosters:state.rosters,teamNames:state.teamNames,elapsedMs:0,running:false,startedAt:null,ended:false,completedAt:null,finalElapsedMs:null};
   save();
   render();
   $('message').textContent='✓ '+teamName(first)+' selected to serve first. Player 1 will serve first for this team; the other team starts with Player 2.';
@@ -506,7 +521,7 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
 
  function reportText(){
   const scoreA=state.points.filter(p=>p.team==='A').length,scoreB=state.points.filter(p=>p.team==='B').length;
-  const lines=['6v6 VOLLEYBALL MATCH REPORT','',`${teamName('A')}: ${scoreA}  |  ${teamName('B')}: ${scoreB}`,`Total points: ${state.points.length}`,`First serving team: ${teamName(state.first)}`,`Elapsed match time: ${fmt(elapsed())}`,'', 'ROSTERS'];
+  const lines=['6v6 VOLLEYBALL MATCH REPORT','',`Status: ${state.ended?'COMPLETED':'IN PROGRESS'}`,`Final score: ${teamName('A')}: ${scoreA}  |  ${teamName('B')}: ${scoreB}`,`Total points: ${state.points.length}`,`First serving team: ${teamName(state.first)}`,`Elapsed match time: ${fmt(state.ended?(state.finalElapsedMs??state.elapsedMs):elapsed())}`,...(state.completedAt?[`Completed at: ${new Date(state.completedAt).toLocaleString()}`]:[]),'', 'ROSTERS'];
   for(const team of ['A','B']){lines.push('',teamName(team));state.rosters[team].forEach((p,i)=>lines.push(`${i+1}. ${p.name||'Player '+(i+1)}${p.number!==''?' · #'+p.number:''}`));}
   lines.push('', 'TIMEOUT RECORD');
   if(!state.timeouts.length)lines.push('No timeouts requested.');
@@ -535,7 +550,7 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
 
  $('pointA').addEventListener('click',()=>add('A'));$('pointB').addEventListener('click',()=>add('B'));
  $('timeoutA').addEventListener('click',()=>requestTimeout('A'));$('timeoutB').addEventListener('click',()=>requestTimeout('B'));
- $('undo').addEventListener('click',undo);$('reset').addEventListener('click',resetMatch);
+ $('undo').addEventListener('click',undo);$('reset').addEventListener('click',resetMatch);$('endMatch').addEventListener('click',endMatch);
  $('startA').addEventListener('click',()=>choose('A'));$('startB').addEventListener('click',()=>choose('B'));
  $('timerToggle').addEventListener('click',toggleTimer);$('timerReset').addEventListener('click',resetTimer);
  load();render();ticker=setInterval(()=>{$('clock').textContent=fmt(elapsed());},250);
